@@ -1,97 +1,110 @@
-import requests
-import numpy as np
 import pandas as pd
+import numpy as np
+import os
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, LSTM, Dropout
+from tensorflow.keras.layers import Dense, Dropout
 
+# Load individual economic factor datasets
+def load_economic_factor(file_path):
+    data = pd.read_csv(file_path, header=None, names=['timestamp', 'value'])
+    return data['value']
 
+# Preprocess datasets for individual analysis
+def preprocess_data(canada_folder, us_folder, currency_rate_file):
+    # Load economic factors for both countries
+    canada_factors = {}
+    us_factors = {}
 
-# Step 1: Fetch Data from APIs
-def fetch_financial_data(financial_api_url, currency_api_url):
-    # Fetch financial index data
-    financial_response = requests.get(financial_api_url)
-    financial_data = financial_response.json()
+    for file_name in os.listdir(canada_folder):
+        if file_name.endswith('.csv'):
+            factor_name = os.path.splitext(file_name)[0]
+            file_path = os.path.join(canada_folder, file_name)
+            canada_factors[factor_name] = load_economic_factor(file_path)
 
-    # Fetch currency data
-    currency_response = requests.get(currency_api_url)
-    currency_data = currency_response.json()
+    for file_name in os.listdir(us_folder):
+        if file_name.endswith('.csv'):
+            factor_name = os.path.splitext(file_name)[0]
+            file_path = os.path.join(us_folder, file_name)
+            us_factors[factor_name] = load_economic_factor(file_path)
 
-    # Process and return data (Assume the response contains time-series data)
-    return financial_data, currency_data
+    # Load currency rate data
+    currency_rate_data = pd.read_csv(currency_rate_file, header=None, names=['timestamp', 'currency_rate'])
 
-# Step 2: Preprocess Data
-def preprocess_data(financial_data, currency_data):
-    # Convert API data into Pandas DataFrames
-    financial_df = pd.DataFrame(financial_data)
-    currency_df = pd.DataFrame(currency_data)
+    # Shift the target column to predict the next month's currency rate
+    currency_rate = currency_rate_data['currency_rate'].shift(-1)
 
-    # Merge the dataframes on a time column (adjust based on API response structure)
-    combined_df = pd.merge(financial_df, currency_df, on="timestamp")
+    # Drop the last row since the shifted target will be NaN
+    currency_rate = currency_rate[:-1]
 
-    # Scale data (Normalize between 0 and 1)
-    scaler = MinMaxScaler()
-    scaled_data = scaler.fit_transform(combined_df.drop("timestamp", axis=1))
+    features = {}
 
-    # Prepare data for LSTM (look back 30 timesteps to predict the next timestep)
-    X, y = [], []
-    look_back = 30
-    for i in range(look_back, len(scaled_data)):
-        X.append(scaled_data[i - look_back:i])
-        y.append(scaled_data[i, -1])  # Assuming the last column is the target variable
+    # Align data and prepare features for each economic factor individually
+    for factor_name, values in {**canada_factors, **us_factors}.items():
+        features[factor_name] = values[:-1]  # Drop the last row to match the shifted target
 
-    X, y = np.array(X), np.array(y)
-    return X, y, scaler
+    feature_dfs = {name: pd.DataFrame({name: features[name]}) for name in features}
 
-# Step 3: Build Neural Network Model
-def build_model(input_shape):
-    model = Sequential()
-    model.add(LSTM(units=50, return_sequences=True, input_shape=input_shape))
-    model.add(Dropout(0.2))
-    model.add(LSTM(units=50, return_sequences=False))
-    model.add(Dropout(0.2))
-    model.add(Dense(units=1))  # Output layer for regression
-    model.compile(optimizer='Adam', loss='mean_squared_error')
+    # Standardize each factor independently
+    scalers = {}
+    for name, df in feature_dfs.items():
+        scaler = StandardScaler()
+        feature_dfs[name] = scaler.fit_transform(df)
+        scalers[name] = scaler
+
+    return feature_dfs, currency_rate
+
+# Build the neural network model
+def build_model():
+    model = Sequential([
+        Dense(64, activation='relu', input_dim=1),
+        Dropout(0.2),
+        Dense(32, activation='relu'),
+        Dropout(0.2),
+        Dense(1)  # Single output for currency rate prediction
+    ])
+    model.compile(optimizer='adam', loss='mse', metrics=['mae'])
     return model
 
-# Step 4: Train and Evaluate Model
-def train_model(X, y):
-    # Split data into train and test sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Train the model for each factor individually
+def train_model_for_factors(feature_dfs, target):
+    models = {}
 
-    # Build the model
-    model = build_model(X_train.shape[1:])
-    
-    # Train the model
-    model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_test, y_test))
-    
-    return model
+    for factor_name, features in feature_dfs.items():
+        # Split data into train and test sets
+        X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
 
-# Step 5: Predict Future Trends
-def predict_future(model, recent_data, scaler):
-    # Prepare recent data for prediction
-    recent_data_scaled = scaler.transform(recent_data)
-    recent_data_scaled = np.array([recent_data_scaled])  # Add batch dimension
+        # Build and train the model
+        model = build_model()
+        model.fit(
+            X_train, y_train,
+            validation_data=(X_test, y_test),
+            epochs=50,
+            batch_size=32,
+            verbose=1
+        )
 
-    # Predict the future trend
-    prediction = model.predict(recent_data_scaled)
-    return scaler.inverse_transform(prediction)  # Return prediction in original scale
+        models[factor_name] = model
+        print(f"Model training complete for factor: {factor_name}")
 
-# Main Workflow
+    return models
+
+# Main execution
 if __name__ == "__main__":
-    financial_api_url = "https://api.example.com/financial-index"
-    currency_api_url = "https://api.example.com/currency"
+    # Paths to the data folders and currency rate file
+    canada_folder = "canada"  # TODOS Replace with the actual folder path
+    us_folder = "us"          # TODOS Replace with the actual folder path
+    currency_rate_file = "currency_rate.csv"  # TODOS Replace with the actual file path
 
-    # Fetch and preprocess data
-    financial_data, currency_data = fetch_financial_data(financial_api_url, currency_api_url)
-    X, y, scaler = preprocess_data(financial_data, currency_data)
+    # Preprocess the data
+    feature_dfs, target = preprocess_data(canada_folder, us_folder, currency_rate_file)
 
-    # Train the model
-    model = train_model(X, y)
+    # Train models for each factor
+    models = train_model_for_factors(feature_dfs, target)
 
-    # Predict future trends
-    recent_data = X[-1]  # Use the most recent data for prediction
-    prediction = predict_future(model, recent_data, scaler)
+    # Save the trained models
+    for factor_name, model in models.items():
+        model.save(f"{factor_name}_model.h5")
 
-    print("Predicted future trend:", prediction)
+    print("All models trained and saved.")
