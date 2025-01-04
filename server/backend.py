@@ -1,11 +1,10 @@
 import pandas as pd
-import numpy as np
 import os
 os.environ["KERAS_BACKEND"] = "tensorflow"
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from keras import Sequential
-from keras import Dense, Dropout
+from keras import layers
 
 # Load individual economic factor datasets
 def load_economic_factor(file_path):
@@ -59,11 +58,11 @@ def preprocess_data(canada_folder, us_folder, currency_rate_file):
 # Build the neural network model
 def build_model():
     model = Sequential([
-        Dense(64, activation='relu', input_dim=1),
-        Dropout(0.2),
-        Dense(32, activation='relu'),
-        Dropout(0.2),
-        Dense(1)  # Single output for currency rate prediction
+        layers.Dense(64, activation='relu', input_dim=1),
+        layers.Dropout(0.2),
+        layers.Dense(32, activation='relu'),
+        layers.Dropout(0.2),
+        layers.Dense(1)  # Single output for currency rate prediction
     ])
     model.compile(optimizer='adam', loss='mse', metrics=['mae'])
     return model
