@@ -23,13 +23,13 @@ def train_model_for_factors(feature_dfs, target):
 
     for factor_name, features in feature_dfs.items():
         # Split data into train and test sets
-        X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+        input_train, input_test, output_train, output_test = train_test_split(features, target, test_size=0.2, random_state=42)
 
         # Build and train the model
         model = build_model()
         model.fit(
-            X_train, y_train,
-            validation_data=(X_test, y_test),
+            input_train, output_train,
+            validation_data=(input_test, output_test),
             epochs=50,
             batch_size=32,
             verbose=1
@@ -43,12 +43,13 @@ def train_model_for_factors(feature_dfs, target):
 # Main execution
 if __name__ == "__main__":
     # Paths to the data folders and currency rate file
-    canada_folder = "./Data/CanadaData"
-    us_folder = "./Data/USData"
+    canada_data = "./Data/CanadaData/canada_merged.csv"
+    us_data = "./Data/USData/us_merged.csv"
     currency_rate_file = "./Data/OutputData/canada_to_us_exchange_rate.csv"
 
     target = pd.read_csv(currency_rate_file, index_col=0)
-    feature_dfs = {} # TODO
+    # 2d array for both us and canada data
+    feature_dfs = {} # todo
 
     # Train models for each factor
     models = train_model_for_factors(feature_dfs, target)
