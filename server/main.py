@@ -43,14 +43,14 @@ def train_model_for_factors(feature_dfs, target):
 
 # Main execution
 if __name__ == "__main__":
-    # Paths to the data folders and currency rate file
-    canada_file = "./Data/CanadaData/canada_merged.csv"
-    us_file = "./Data/USData/us_merged.csv"
-    currency_rate_file = "./Data/OutputData/canada_to_us_exchange_rate.csv"
+    # Paths to the data folders and currency rate data
+    canada_data = "./Data/CanadaData/canada_merged.csv"
+    us_data = "./Data/USData/us_merged.csv"
+    currency_rate_data = "./Data/OutputData/canada_to_us_exchange_rate.csv"
 
-    target = pd.read_csv(currency_rate_file, index_col=0)
+    target = pd.read_csv(currency_rate_data, index_col=0)
     # 2d array for both us and canada data
-    feature_dfs = preprocess_data(canada_file, us_file)
+    feature_dfs = preprocess_data(canada_data, us_data)
 
     # Train models for each factor
     models = train_model_for_factors(feature_dfs, target)
