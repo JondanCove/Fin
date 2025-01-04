@@ -56,6 +56,7 @@ def preprocess_data(canada_folder, us_folder, currency_rate_file):
     return feature_dfs, currency_rate
 
 # Build the neural network model
+#maybe add more
 def build_model():
     model = Sequential([
         layers.Dense(64, activation='relu', input_dim=1),
@@ -82,7 +83,7 @@ def train_model_for_factors(feature_dfs, target):
             validation_data=(X_test, y_test),
             epochs=50,
             batch_size=32,
-            verbose=1
+            verbose='1'
         )
 
         models[factor_name] = model
@@ -93,9 +94,9 @@ def train_model_for_factors(feature_dfs, target):
 # Main execution
 if __name__ == "__main__":
     # Paths to the data folders and currency rate file
-    canada_folder = "canada"  # TODOS Replace with the actual folder path
-    us_folder = "us"          # TODOS Replace with the actual folder path
-    currency_rate_file = "currency_rate.csv"  # TODOS Replace with the actual file path
+    canada_folder = "C:/Users/cyhsi/Downloads/winter2025/Fin/server/Data/CanadaData"  # TODOS Replace with the actual folder path
+    us_folder = "C:/Users/cyhsi/Downloads/winter2025/Fin/server/Data/USData"         # TODOS Replace with the actual folder path
+    currency_rate_file = "C:/Users/cyhsi/Downloads/winter2025/Fin/server/Data/OutputData"  # TODOS Replace with the actual file path
 
     # Preprocess the data
     feature_dfs, target = preprocess_data(canada_folder, us_folder, currency_rate_file)
