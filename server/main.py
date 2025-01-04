@@ -22,7 +22,7 @@ def build_model():
 def train_model_for_factors(feature_dfs, target):
     models = {}
 
-    for factor_name, features in feature_dfs.items():
+    for features in feature_dfs:
         # Split data into train and test sets
         input_train, input_test, output_train, output_test = train_test_split(features, target, test_size=0.2, random_state=42)
 
