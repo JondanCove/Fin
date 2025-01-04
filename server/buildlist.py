@@ -1,11 +1,13 @@
 import numpy as np
 import pandas as pd
+import os
+from sklearn.preprocessing import StandardScaler
 
 # [[C_CPR, C_CPI, C_CEM, C_GDP, C_IP, U_CIV,], ...] 
 
 # Load individual economic factor datasets
 def load_economic_factor(file_path):
-    data = pd.read_csv(file_path, header=1, names=['timestamp', 'value'])
+    data = pd.read_csv(file_path, header=0, names=['timestamp', 'value'])
     return data['value']
 
 # Preprocess datasets for individual analysis
