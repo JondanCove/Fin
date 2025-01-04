@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
 import os
+os.environ["KERAS_BACKEND"] = "tensorflow"
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
+from keras import Sequential
+from keras import Dense, Dropout
 
 # Load individual economic factor datasets
 def load_economic_factor(file_path):
