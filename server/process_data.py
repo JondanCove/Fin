@@ -4,11 +4,18 @@ from sklearn.preprocessing import StandardScaler
 
 # Preprocess datasets for individual analysis
 def preprocess_data(canada_data, us_data):
-    # Load economic factors for both countries
-    canada_factors = pd.read_csv(canada_data, header=0).to_numpy()
-    us_factors = pd.read_csv(us_data, header=0).to_numpy()
+    # Load economic factor data from csv files for both countries and combine them into a dataframe
+    canada_numpy = pd.read_csv(canada_data, header=0).to_numpy()
+    us_numpy = pd.read_csv(us_data, header=0).to_numpy()
 
-    feature_dfs = {name: pd.DataFrame(concatenate((canada_factors, us_factors), axis=1)) for name in ["Canada", "US"]}
+    data_merged = concatenate((canada_numpy, us_numpy), axis=1)
+
+    canada_header = pd.read_csv(canada_data, header=0).columns
+    us_header = pd.read_csv(us_data, header=0).columns
+
+    headers_merged = concatenate((canada_header, us_header), axis=0)
+
+    df = pd.DataFrame(data_merged, columns=headers_merged)
 
     # Standardize each factor independently
     # scalers = {}
@@ -17,7 +24,7 @@ def preprocess_data(canada_data, us_data):
     #     feature_dfs[name] = scaler.fit_transform(df)
     #     scalers[name] = scaler
 
-    return feature_dfs
+    return df
 
 
 
