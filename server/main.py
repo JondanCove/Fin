@@ -9,9 +9,9 @@ from process_data import preprocess_data
 # Build the neural network model
 def build_model():
     model = Sequential([
-        layers.Dense(64, activation='leaky_relu', input_dim=1),
+        layers.Dense(64, activation='relu'),
         layers.Dropout(0.2),
-        layers.Dense(32, activation='leaky_relu'),
+        layers.Dense(32, activation='relu'),
         layers.Dropout(0.2),
         layers.Dense(1)  # Single output for currency rate prediction
     ])
@@ -20,26 +20,22 @@ def build_model():
 
 # Train the model for each factor individually
 def train_model_for_factors(feature_dfs, target):
-    models = {}
 
-    for features in feature_dfs:
-        # Split data into train and test sets
-        input_train, input_test, output_train, output_test = train_test_split(features, target, test_size=0.2, random_state=42)
+    # Split data into train and test sets
+    input_train, input_test, output_train, output_test = train_test_split(feature_dfs, target, test_size=0.2, random_state=42)
 
-        # Build and train the model
-        model = build_model()
-        model.fit(
-            input_train, output_train,
-            validation_data=(input_test, output_test),
-            epochs=50,
-            batch_size=32,
-            verbose=1
-        )
+    # Build and train the model
+    model = build_model()
+    model.fit(
+        input_train, output_train,
+        validation_data=(input_test, output_test),
+        epochs=50,
+        batch_size=32,
+        verbose=1
+    )
 
-        models[factor_name] = model
-        print(f"Model training complete for factor: {factor_name}")
 
-    return models
+    return model
 
 # Main execution
 if __name__ == "__main__":
@@ -48,8 +44,8 @@ if __name__ == "__main__":
     us_data = "./Data/USData/us_merged.csv"
     currency_rate_data = "./Data/OutputData/canada_to_us_exchange_rate.csv"
 
-    target = pd.read_csv(currency_rate_data, index_col=0)
-    # 2d array for both us and canada data
+    target = pd.DataFrame(pd.read_csv(currency_rate_data, index_col=0), columns=['exchange_rate'])
+    # pandas dataframe for both us and canada data
     feature_dfs = preprocess_data(canada_data, us_data)
 
     # Train models for each factor
