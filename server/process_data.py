@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 # Load individual economic factor datasets
 def load_economic_factor(file_path):
     data = pd.read_csv(file_path, header=0, names=['timestamp', 'value'])
-    return data['value']
+    return data.to_numpy()
 
 # Preprocess datasets for individual analysis
 def preprocess_data(canada_folder, us_folder, currency_rate_file):
