@@ -1,7 +1,6 @@
 import pandas as pd
 import os
 os.environ["KERAS_BACKEND"] = "tensorflow"
-
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from keras import Sequential
