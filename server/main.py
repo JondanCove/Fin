@@ -4,6 +4,7 @@ os.environ["KERAS_BACKEND"] = "tensorflow"
 from sklearn.model_selection import train_test_split
 from keras import Sequential
 from keras import layers
+from keras import models
 from process_data import preprocess_data, normalize_data
 
 
@@ -56,7 +57,7 @@ def train_model_for_factors(feature, target):
         validation_data=(input_test, output_test),
         epochs=10000,
         batch_size=16,
-        verbose=2
+        verbose=1
     )
 
     return model
@@ -68,16 +69,34 @@ if __name__ == "__main__":
     us_data = "./Data/USData/us_merged.csv"
     currency_rate_data = "./Data/OutputData/canada_to_us_exchange_rate.csv"
 
-    target_df = pd.DataFrame(pd.read_csv(currency_rate_data, header=0).to_numpy(), columns=['exchange_rate'])
-    # pandas dataframe for both us and canada data
-    feature_df = preprocess_data(canada_data, us_data)
+    decision = input("What do you want to do? (1 = train new, 2 = test existing)")
 
-    # Normalize data to prevent NaN errors
-    normalize_data(feature_df)
-    normalize_data(target_df)
+    if decision == '1':
+        target_df = pd.DataFrame(pd.read_csv(currency_rate_data, header=0).to_numpy(), columns=['exchange_rate'])
+        # pandas dataframe for both us and canada data
+        feature_df = preprocess_data(canada_data, us_data)
 
-    # Train models for each factor
-    final_model = train_model_for_factors(feature_df, target_df)
+        # normalize_data(feature_df)
+        # normalize_data(target_df)
 
-    final_model.save('currency_rate_predictor.keras')
-    print('Model saved successfully')
+        # Train models for each factor
+        final_model = train_model_for_factors(feature_df, target_df)
+
+        final_model.save('currency_rate_predictor.keras')
+        print('Model saved successfully')
+    elif decision == '2':
+        while True:
+            model = models.load_model('currency_rate_predictor.keras')
+            print('Model loaded successfully')
+
+            print('Enter the following information, separated by commas:\nprime_rate_CA,unemployment_CA,consumer_price_index_CA,GDP_CA,industrial_price_index_CA,labor_participation_US,consumer_price_index_US,population_US,price_per_commodity_US,unemployment_US,prime_rate_US')
+            user_input = input().split(',')
+            for i in range(len(user_input)):
+                user_input[i] = float(user_input[i].strip())
+
+            user_input_df = pd.DataFrame([user_input])
+
+
+            print('model prediction: ')
+            print(model.predict(user_input_df))
+
