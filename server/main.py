@@ -4,6 +4,7 @@ os.environ["KERAS_BACKEND"] = "tensorflow"
 from sklearn.model_selection import train_test_split
 from keras import Sequential
 from keras import layers
+from process_data import preprocess_data
 
 # Build the neural network model
 def build_model():
@@ -49,9 +50,7 @@ if __name__ == "__main__":
 
     target = pd.read_csv(currency_rate_file, index_col=0)
     # 2d array for both us and canada data
-    feature_dfs = {} # todo
-    # Preprocess the data
-    feature_dfs, target = preprocess_data(canada_file, us_file, currency_rate_file)
+    feature_dfs = preprocess_data(canada_file, us_file)
 
     # Train models for each factor
     models = train_model_for_factors(feature_dfs, target)
