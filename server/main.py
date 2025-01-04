@@ -4,36 +4,60 @@ os.environ["KERAS_BACKEND"] = "tensorflow"
 from sklearn.model_selection import train_test_split
 from keras import Sequential
 from keras import layers
-from process_data import preprocess_data
+from process_data import preprocess_data, normalize_data
 
-# Build the neural network model
+
 def build_model():
+    """
+    Builds and compiles a Sequential model for currency rate prediction.
+
+    :return: Compiled Keras Sequential model.
+    :rtype: keras.engine.sequential.Sequential
+    """
     model = Sequential([
-        layers.Dense(64, activation='relu'),
-        layers.Dropout(0.2),
-        layers.Dense(32, activation='relu'),
-        layers.Dropout(0.2),
-        layers.Dense(1)  # Single output for currency rate prediction
+        layers.Input(shape=(11,)),
+        layers.Dense(128, activation=None, kernel_initializer='he_normal'),
+        layers.BatchNormalization(),
+        layers.LeakyReLU(negative_slope=0.1),
+        layers.Dense(64, activation=None, kernel_initializer='he_normal'),
+        layers.BatchNormalization(),
+        layers.LeakyReLU(negative_slope=0.1),
+        layers.Dropout(0.1),
+        layers.Dense(32, activation=None, kernel_initializer='he_normal'),
+        layers.BatchNormalization(),
+        layers.LeakyReLU(negative_slope=0.1),
+        layers.Dropout(0.1),
+        layers.Dense(1, activation=None)  # Single output for currency rate prediction
     ])
     model.compile(optimizer='adam', loss='mse', metrics=['mae'])
     return model
 
-# Train the model for each factor individually
-def train_model_for_factors(feature_dfs, target):
 
+def train_model_for_factors(feature, target):
+    """
+    Trains a machine learning model using the given feature sets and targets. This function splits
+    the input data into training and testing sets, builds a model, and trains it. The trained
+    model is returned as the output.
+
+    :param feature: A DataFrame containing the feature variables used to predict the target variable.
+    :type feature: pandas.DataFrame or numpy.ndarray
+    :param target: A DataFrame containing the target variable to be predicted.
+    :type target: pandas.DataFrame, pandas.Series, or numpy.ndarray
+    :return: The trained machine learning model after fitting.
+    :rtype: Model
+    """
     # Split data into train and test sets
-    input_train, input_test, output_train, output_test = train_test_split(feature_dfs, target, test_size=0.2, random_state=42)
+    input_train, input_test, output_train, output_test = train_test_split(feature, target, test_size=0.2, random_state=42)
 
     # Build and train the model
     model = build_model()
     model.fit(
         input_train, output_train,
         validation_data=(input_test, output_test),
-        epochs=50,
-        batch_size=32,
-        verbose=1
+        epochs=10000,
+        batch_size=16,
+        verbose=2
     )
-
 
     return model
 
@@ -44,15 +68,16 @@ if __name__ == "__main__":
     us_data = "./Data/USData/us_merged.csv"
     currency_rate_data = "./Data/OutputData/canada_to_us_exchange_rate.csv"
 
-    target = pd.DataFrame(pd.read_csv(currency_rate_data, index_col=0), columns=['exchange_rate'])
+    target_df = pd.DataFrame(pd.read_csv(currency_rate_data, header=0).to_numpy(), columns=['exchange_rate'])
     # pandas dataframe for both us and canada data
-    feature_dfs = preprocess_data(canada_data, us_data)
+    feature_df = preprocess_data(canada_data, us_data)
+
+    # Normalize data to prevent NaN errors
+    normalize_data(feature_df)
+    normalize_data(target_df)
 
     # Train models for each factor
-    models = train_model_for_factors(feature_dfs, target)
+    final_model = train_model_for_factors(feature_df, target_df)
 
-    # Save the trained models
-    for factor_name, model in models.items():
-        model.save(f"{factor_name}_model.h5")
-
-    print("All models trained and saved.")
+    final_model.save('currency_rate_predictor.keras')
+    print('Model saved successfully')

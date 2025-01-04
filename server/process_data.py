@@ -2,8 +2,22 @@ from numpy import concatenate
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-# Preprocess datasets for individual analysis
+
 def preprocess_data(canada_data, us_data):
+    """
+    Loads economic factor data from CSV files for Canada and the US, combines them into a single
+    DataFrame, and returns the result. The method merges the data by concatenating the numpy arrays
+    of both datasets and re-constructs a DataFrame by combining their column headers.
+    This function prepares the datasets for further data processing and analysis.
+
+    :param canada_data: File path to the CSV dataset containing Canada's economic factor data.
+    :type canada_data: str
+    :param us_data: File path to the CSV dataset containing the United States' economic factor
+        data.
+    :type us_data: str
+    :return: A pandas DataFrame combining the economic factors from both countries
+    :rtype: pandas.DataFrame
+    """
     # Load economic factor data from csv files for both countries and combine them into a dataframe
     canada_numpy = pd.read_csv(canada_data, header=0).to_numpy()
     us_numpy = pd.read_csv(us_data, header=0).to_numpy()
@@ -27,4 +41,5 @@ def preprocess_data(canada_data, us_data):
     return df
 
 
-
+def normalize_data(df):
+    return pd.DataFrame(StandardScaler().fit_transform(df), columns=df.columns)
