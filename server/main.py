@@ -17,15 +17,14 @@ def build_model():
     """
     model = Sequential([
         layers.Input(shape=(11,)),
-        layers.Dense(128, activation=None, kernel_initializer='he_normal'),
         layers.BatchNormalization(),
-        layers.LeakyReLU(negative_slope=0.1),
         layers.Dense(64, activation=None, kernel_initializer='he_normal'),
-        layers.BatchNormalization(),
         layers.LeakyReLU(negative_slope=0.1),
         layers.Dropout(0.1),
         layers.Dense(32, activation=None, kernel_initializer='he_normal'),
-        layers.BatchNormalization(),
+        layers.LeakyReLU(negative_slope=0.1),
+        layers.Dropout(0.1),
+        layers.Dense(16, activation=None, kernel_initializer='he_normal'),
         layers.LeakyReLU(negative_slope=0.1),
         layers.Dropout(0.1),
         layers.Dense(1, activation=None)  # Single output for currency rate prediction
