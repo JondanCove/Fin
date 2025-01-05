@@ -40,6 +40,3 @@ def preprocess_data(canada_data, us_data):
 
     return df
 
-
-def normalize_data(df):
-    return pd.DataFrame(StandardScaler().fit_transform(df), columns=df.columns)

@@ -5,7 +5,8 @@ from sklearn.model_selection import train_test_split
 from keras import Sequential
 from keras import layers
 from keras import models
-from process_data import preprocess_data, normalize_data
+from process_data import preprocess_data
+import matplotlib.pyplot as plt
 
 
 def build_model():
@@ -51,13 +52,27 @@ def train_model_for_factors(feature, target):
 
     # Build and train the model
     model = build_model()
-    model.fit(
+    history = model.fit(
         input_train, output_train,
         validation_data=(input_test, output_test),
-        epochs=10000,
+        epochs=1000,
         batch_size=16,
         verbose=1
     )
+
+    # Retrieve loss values from history
+    train_loss = history.history['loss']
+    val_loss = history.history['val_loss']  # Validation loss, if validation data is provided
+    # Plot the loss graph
+    plt.figure(figsize=(5, 3))
+    plt.plot(train_loss, label='Training Loss')
+    plt.plot(val_loss, label='Validation Loss', linestyle='--')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss Curve')
+    plt.legend()
+    plt.grid()
+    plt.show()
 
     return model
 
@@ -90,8 +105,7 @@ if __name__ == "__main__":
 
             print('Enter the following information, separated by commas:\nprime_rate_CA,unemployment_CA,consumer_price_index_CA,GDP_CA,industrial_price_index_CA,labor_participation_US,consumer_price_index_US,population_US,price_per_commodity_US,unemployment_US,prime_rate_US')
             user_input = input().split(',')
-            for i in range(len(user_input)):
-                user_input[i] = float(user_input[i].strip())
+            user_input = [float(value.strip()) for value in user_input]
 
             user_input_df = pd.DataFrame([user_input])
 
