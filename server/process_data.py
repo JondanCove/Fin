@@ -1,6 +1,6 @@
 from numpy import concatenate
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+
 
 
 def preprocess_data(canada_data, us_data):
