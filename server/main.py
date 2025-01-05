@@ -79,9 +79,10 @@ def train_model_for_factors(feature, target):
 # Main execution
 if __name__ == "__main__":
     # Paths to the data folders and currency rate data
-    canada_data = "./Data/CanadaData/canada_merged.csv"
-    us_data = "./Data/USData/us_merged.csv"
-    currency_rate_data = "./Data/OutputData/canada_to_us_exchange_rate.csv"
+    current_folder = os.getcwd()
+    canada_data = current_folder + "/Data/CanadaData/canada_merged.csv"
+    us_data = current_folder + "/Data/USData/us_merged.csv"
+    currency_rate_data = current_folder + "/Data/OutputData/canada_to_us_exchange_rate.csv"
 
     decision = input("What do you want to do? (1 = train new, 2 = test existing)")
 
