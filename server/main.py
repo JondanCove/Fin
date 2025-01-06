@@ -6,7 +6,7 @@ from keras import Sequential
 from keras import layers
 from keras import models
 from process_data import preprocess_data
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 def build_model():
@@ -64,15 +64,15 @@ def train_model_for_factors(feature, target):
     train_loss = history.history['loss']
     val_loss = history.history['val_loss']  # Validation loss, if validation data is provided
     # Plot the loss graph
-    plt.figure(figsize=(5, 3))
-    plt.plot(train_loss, label='Training Loss')
-    plt.plot(val_loss, label='Validation Loss', linestyle='--')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Loss Curve')
-    plt.legend()
-    plt.grid()
-    plt.show()
+    # plt.figure(figsize=(5, 3))
+    # plt.plot(train_loss, label='Training Loss')
+    # plt.plot(val_loss, label='Validation Loss', linestyle='--')
+    # plt.xlabel('Epochs')
+    # plt.ylabel('Loss')
+    # plt.title('Loss Curve')
+    # plt.legend()
+    # plt.grid()
+    # plt.show()
 
     return model
 
