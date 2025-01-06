@@ -1,37 +1,38 @@
 import pandas as pd
 import os
+
+from keras.api.callbacks import ReduceLROnPlateau
+from keras.api import Sequential, activations, regularizers, optimizers, losses
+from keras.api.layers import Dense, Dropout, Normalization, Input, LSTM
+from keras.api.models import load_model
+from keras.api.callbacks import EarlyStopping
+
 os.environ["KERAS_BACKEND"] = "tensorflow"
 from sklearn.model_selection import train_test_split
-from keras import Sequential
-from keras import layers
-from keras import models
-from process_data import preprocess_data
+from process_data import preprocess_data, create_sequences
 import matplotlib.pyplot as plt
 
 
-def build_model():
+def build_model(input_shape=(4,11)):
     """
     Builds and compiles a Sequential model for currency rate prediction.
 
     :return: Compiled Keras Sequential model.
     :rtype: keras.engine.sequential.Sequential
     """
-    model = Sequential([
-        layers.Input(shape=(11,)),
-        layers.BatchNormalization(),
-        layers.Dense(64, activation=None, kernel_initializer='he_normal'),
-        layers.LeakyReLU(negative_slope=0.1),
-        layers.Dropout(0.1),
-        layers.Dense(32, activation=None, kernel_initializer='he_normal'),
-        layers.LeakyReLU(negative_slope=0.1),
-        layers.Dropout(0.1),
-        layers.Dense(16, activation=None, kernel_initializer='he_normal'),
-        layers.LeakyReLU(negative_slope=0.1),
-        layers.Dropout(0.1),
-        layers.Dense(1, activation=None)  # Single output for currency rate prediction
+    lstm_model = Sequential([
+        Input(shape=input_shape),
+        Normalization(),
+        LSTM(128, return_sequences=True, recurrent_dropout=0.2),
+        Dropout(0.2),
+        LSTM(64, recurrent_dropout=0.2),
+        Dropout(0.2),
+        Dense(32, activation=activations.leaky_relu, kernel_regularizer=regularizers.l2(0.01)),
+        Dense(1, activation=activations.linear)
     ])
-    model.compile(optimizer='adam', loss='mse', metrics=['mae'])
-    return model
+
+    lstm_model.compile(optimizer=optimizers.Adam(learning_rate=0.001), loss=losses.mean_squared_error, metrics=[losses.mean_absolute_error])
+    return lstm_model
 
 
 def train_model_for_factors(feature, target):
@@ -52,10 +53,13 @@ def train_model_for_factors(feature, target):
 
     # Build and train the model
     model = build_model()
+    early_stop = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
+    lr_scheduler = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, min_lr=0.00001, verbose=1)
     history = model.fit(
         input_train, output_train,
         validation_data=(input_test, output_test),
         epochs=1000,
+        callbacks=[early_stop, lr_scheduler],
         batch_size=16,
         verbose=1
     )
@@ -64,7 +68,7 @@ def train_model_for_factors(feature, target):
     train_loss = history.history['loss']
     val_loss = history.history['val_loss']  # Validation loss, if validation data is provided
     # Plot the loss graph
-    plt.figure(figsize=(5, 3))
+    plt.figure(figsize=(10, 6))
     plt.plot(train_loss, label='Training Loss')
     plt.plot(val_loss, label='Validation Loss', linestyle='--')
     plt.xlabel('Epochs')
@@ -72,6 +76,7 @@ def train_model_for_factors(feature, target):
     plt.title('Loss Curve')
     plt.legend()
     plt.grid()
+    plt.yscale('log')
     plt.show()
 
     return model
@@ -91,17 +96,18 @@ if __name__ == "__main__":
         # pandas dataframe for both us and canada data
         feature_df = preprocess_data(canada_data, us_data)
 
-        # normalize_data(feature_df)
-        # normalize_data(target_df)
+        input_seq, output_seq = create_sequences(feature_df, target_df, 4)
 
         # Train models for each factor
-        final_model = train_model_for_factors(feature_df, target_df)
+        final_model = train_model_for_factors(input_seq, output_seq)
 
-        final_model.save('currency_rate_predictor.keras')
-        print('Model saved successfully')
+        want_to_save = input("Do you want to save the model? (y/n)")
+        if want_to_save == 'y':
+            final_model.save('currency_rate_predictor.keras')
+            print('Model saved successfully')
     elif decision == '2':
         while True:
-            model = models.load_model('currency_rate_predictor.keras')
+            model = load_model('currency_rate_predictor.keras')
             print('Model loaded successfully')
 
             print('Enter the following information, separated by commas:\nprime_rate_CA,unemployment_CA,consumer_price_index_CA,GDP_CA,industrial_price_index_CA,labor_participation_US,consumer_price_index_US,population_US,price_per_commodity_US,unemployment_US,prime_rate_US')

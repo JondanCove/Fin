@@ -1,6 +1,5 @@
-from numpy import concatenate
+from numpy import concatenate, array
 import pandas as pd
-
 
 
 def preprocess_data(canada_data, us_data):
@@ -31,12 +30,26 @@ def preprocess_data(canada_data, us_data):
 
     df = pd.DataFrame(data_merged, columns=headers_merged)
 
-    # Standardize each factor independently
-    # scalers = {}
-    # for name, df in feature_dfs.items():
-    #     scaler = StandardScaler()
-    #     feature_dfs[name] = scaler.fit_transform(df)
-    #     scalers[name] = scaler
-
     return df
 
+
+def create_sequences(df_input, df_output, window_size):
+    """
+    Convert input and output DataFrames into sequences for LSTM.
+
+    Args:
+        df_input (pd.DataFrame): Input data with shape (num_timesteps, num_features).
+        df_output (pd.DataFrame): Output data with shape (num_timesteps, 1).
+        window_size (int): Number of time steps per sequence.
+
+    Returns:
+        X (np.ndarray): Input sequences of shape (num_samples, window_size, num_features).
+        y (np.ndarray): Output values of shape (num_samples, 1).
+    """
+    X, y = [], []
+
+    for i in range(len(df_input) - window_size):
+        X.append(df_input.iloc[i:i + window_size].values)
+        y.append(df_output.iloc[i + window_size].values)
+
+    return array(X), array(y)
